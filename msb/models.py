@@ -38,9 +38,3 @@ class Post(MongoModel):
     body = fields.CharField()
     date = fields.DateTimeField()
     author = fields.ReferenceField(User)
-
-    @property
-    def author_handle(self):
-        """Convenience property for accessing just the author handle."""
-        with no_auto_dereference(self):
-            return self.author
