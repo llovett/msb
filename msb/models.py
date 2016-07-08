@@ -1,5 +1,4 @@
 from pymongo_odm import MongoModel, fields, connect
-from pymongo_odm.context_managers import no_auto_dereference
 
 from common import salted_hash
 
