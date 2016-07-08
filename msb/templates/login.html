@@ -1,0 +1,19 @@
+<!-- -*- mode: jinja2 -*- -->
+<!doctype html>
+<html>
+  <head>
+    <title>Login</title>
+  </head>
+  <body>
+    {% if error %}
+      <p class="error-paragraph">{{ error }}</p>
+    {% endif %}
+    <form id="login-form" action="/login" method="post">
+      <label for="email">email</label>
+      <input type="text" id="email" name="email" />
+      <label for="password">password</label>
+      <input type="password" id="password" name="password" />
+      <input type="submit" value="submit" />
+    </form>
+  </body>
+</html>
