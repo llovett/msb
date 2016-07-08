@@ -1,3 +1,4 @@
+import datetime
 import functools
 import os
 import sys
@@ -5,9 +6,10 @@ import sys
 from flask import (
     Flask, render_template, session, request,
     redirect, url_for)
+from pymongo_odm.errors import ValidationError
 
 from common import salted_hash
-from models import User
+from models import User, Post
 
 # Secret key used to encrypt session cookies.
 SECRET_KEY = os.getenv('MSB_SECRET_KEY')
@@ -30,7 +32,22 @@ def logged_in(func):
 @logged_in
 @app.route('/posts/new', methods=['GET', 'POST'])
 def create_post():
-    pass
+    if request.method == 'GET':
+        return render_template('new_post.html')
+    else:
+        print(request.form)
+        if request.form['date']:
+            post_date = datetime.strptime(request.form['date'], '%m/%d/%y')
+        else:
+            post_date = datetime.datetime.now()
+        try:
+            Post(title=request.form['title'],
+                 date=post_date,
+                 body=request.form['content'],
+                 author=session['user']['email']).save()
+        except ValidationError as exc:
+            return render_template('new_post.html', errors=exc.message)
+        return 'Your post has been saved.'
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -53,10 +70,7 @@ def login():
 
 @app.route('/')
 def index():
-    if 'user' in session:
-        return 'Hello again! Your handle is {}'.format(
-            session['user']['handle'])
-    return 'Hello, world!'
+    return render_template('index.html', posts=Post.objects.all())
 
 
 def create_user(email, handle, password):

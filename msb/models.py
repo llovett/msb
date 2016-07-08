@@ -1,4 +1,5 @@
 from pymongo_odm import MongoModel, fields, connect
+from pymongo_odm.context_managers import no_auto_dereference
 
 from common import salted_hash
 
@@ -37,3 +38,9 @@ class Post(MongoModel):
     body = fields.CharField()
     date = fields.DateTimeField()
     author = fields.ReferenceField(User)
+
+    @property
+    def author_handle(self):
+        """Convenience property for accessing just the author handle."""
+        with no_auto_dereference(self):
+            return self.author

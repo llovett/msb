@@ -1,0 +1,30 @@
+<!-- -*- mode: jinja2 -*- -->
+
+{% macro render_post(post) -%}
+  <div class="post-container">
+    <h2 class="post-title">{{ post.title }}</h2>
+    <h3 class="post-author">{{ post.author.handle }}</h3>
+    <h3 class="post-date">{{ post.date }}</h3>
+    <p class="post-content">{{ post.body }}</p>
+  </div>
+{%- endmacro %}
+
+<!doctype html>
+<html>
+  <head>
+    <title>My Sweet Blog</title>
+  </head>
+  <body>
+    {% if posts %}
+      <ul class="post-list">
+        {% for post in posts %}
+          <li class="post-item">
+            {{ render_post(post) }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="no-posts">Nothing to see yet! Come back soon and check for updates.</p>
+    {% endif %}
+  </body>
+</html>

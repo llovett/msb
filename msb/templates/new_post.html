@@ -1,0 +1,28 @@
+<!-- -*- mode: jinja2 -*- -->
+<!doctype html>
+<html>
+  <head>
+    <title>Create a new Post</title>
+  </head>
+  <body>
+    {% if errors %}
+      <ul class="error-list">
+        {% for error in errors %}
+          <li class="error-item">{{ error }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    <form id="new-post-form" action="/posts/new" method="post">
+      <label for="title">title</label>
+      <input type="text" id="title" name="title" />
+
+      <label for="date">date MM/DD/YY (blank for today, right now)</label>
+      <input type="datetime" name="date" />
+
+      <label for="content">content</label>
+      <textarea rows="40" cols="80" name="content" form="new-post-form"></textarea>
+
+      <input type="submit" value="submit" />
+    </form>
+  </body>
+</html>
