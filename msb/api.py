@@ -33,7 +33,8 @@ def create(model):
         try:
             data = request.get_json(force=True)
             # Add the current user.
-            data['author'] = session['user']['email']
+            if hasattr(model, 'author'):
+                data['author'] = session['user']['email']
             return jsonify(model.objects.create(**data).as_json())
         except ValidationError as exc:
             return jsonify({'errors': exc.message}), 400

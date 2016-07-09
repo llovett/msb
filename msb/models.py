@@ -34,8 +34,9 @@ class User(MongoModel, JSONAble):
 
 
 class Comment(MongoModel, JSONAble):
-    export_fields = ('date', 'body')
+    export_fields = ('date', 'body', 'author')
 
+    author = fields.EmailField()
     date = fields.DateTimeField()
     body = fields.CharField()
 
