@@ -7,7 +7,18 @@ from common import salted_hash
 connect('mongodb://localhost:27017/msb')
 
 
-class User(MongoModel):
+class JSONAble(object):
+    export_fields = []
+
+    def as_json(self):
+        if not self.export_fields:
+            return self.__dict__
+        return {field: getattr(self, field) for field in self.export_fields}
+
+
+class User(MongoModel, JSONAble):
+    export_fields = ('email', 'handle')
+
     email = fields.EmailField(primary_key=True)
     handle = fields.CharField()  # TODO: some way of specifying 'unique'?
     password = fields.CharField()
@@ -21,19 +32,22 @@ class User(MongoModel):
         except User.DoesNotExist:
             return None
 
-    def as_dict(self):
-        """Get this User as a dict that can be sent client-side."""
-        export_fields = ('email', 'handle')
-        return {field: getattr(self, field) for field in export_fields}
 
+class Comment(MongoModel, JSONAble):
+    export_fields = ('date', 'body')
 
-class Comment(MongoModel):
     date = fields.DateTimeField()
     body = fields.CharField()
 
 
-class Post(MongoModel):
+class Post(MongoModel, JSONAble):
+    export_fields = ('date', 'title', 'body', 'author_handle')
+
     title = fields.CharField()
     body = fields.CharField()
     date = fields.DateTimeField()
     author = fields.ReferenceField(User)
+
+    @property
+    def author_handle(self):
+        return self.author.handle

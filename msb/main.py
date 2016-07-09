@@ -4,7 +4,7 @@ import os
 import sys
 
 from flask import (
-    Flask, render_template, session, request,
+    Flask, render_template, session, request, jsonify,
     redirect, url_for)
 from pymongo_odm.errors import ValidationError
 

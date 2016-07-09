@@ -11,3 +11,9 @@ def salted_hash(password):
         salt=PASSWORD_SALT,
         iterations=100000
     ))
+
+
+def pluralize(name):
+    if name.endswith('s') or name.endswith('z'):
+        return name + 'es'
+    return name + 's'
