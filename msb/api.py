@@ -7,7 +7,7 @@ from flask import Flask, jsonify, request, session
 from pymongo_odm.errors import ValidationError
 
 from common import pluralize
-from models import User, Post
+from models import User, Post, Comment
 
 
 # Secret key used to encrypt session cookies.
@@ -25,6 +25,65 @@ def login_required(func):
             return jsonify({'errors': ['Must be logged in.']}), 401
         return func(*args, **kwargs)
     return wrapper
+
+
+def links_for_model(model):
+    """Get a list of all valid endpoints relating to the given Model."""
+    model_name = model.__name__
+    model_example = {
+        field.attname: '<{}>'.format(field.attname.upper())
+        for field in model._mongometa.get_fields()
+    }
+    first_example_key = next(iter(model_example))
+    update_example = {"$set": {first_example_key: '<{}>'.format(
+        first_example_key.upper())}}
+    id_path = '/<{}_id>'.format(model_name.lower())
+    plural_name = pluralize(model_name.lower())
+    endpoint_specs = (
+        # endpoint or None, method, description, example payload or None
+        (
+            None,
+            'GET',
+            'Get a listing of all {} objects.'.format(model_name),
+            None
+        ),
+        (
+            None,
+            'POST',
+            'Create a new {} object.'.format(model_name),
+            model_example
+        ),
+        (
+            id_path,
+            'GET',
+            'Retrieve the specified {} object.'.format(model_name),
+            None
+        ),
+        (
+            id_path,
+            'POST',
+            ('Update the specified {} object '
+             'with a MongoDB query document.').format(model_name),
+            update_example
+        ),
+        (
+            id_path,
+            'DELETE',
+            'Delete the specified {} object.'.format(model_name),
+            None
+        )
+    )
+    endpoints = []
+    for path, method, desc, example in endpoint_specs:
+        link = {
+            'endpoint': '/v1/{}{}'.format(plural_name, path or ''),
+            'method': method,
+            'description': desc
+        }
+        if example is not None:
+            link['example'] = example
+        endpoints.append(link)
+    return endpoints
 
 
 def create(model):
@@ -115,8 +174,39 @@ def login_api():
     return jsonify({'errors': ['Bad email/password.']}), 400
 
 
+@app.route('/v1')
+def index_api():
+    all_links = (
+        links_for_model(Post) +
+        links_for_model(Comment) +
+        links_for_model(User)
+    )
+    # Add miscellaneous links.
+    all_links.extend([
+        {
+            'endpoint': '/v1/users/login',
+            'method': 'POST',
+            'description': (
+                'Request a session cookie to use for future requests that '
+                'require authorization.'
+            )
+        },
+        {
+            'endpoint': '/v1',
+            'method': '<any>',
+            'description': 'Retrieve a listing of available API endpoints.'
+        }
+    ])
+
+    return jsonify({
+        'service': 'MSB is My Sweet Blog.',
+        'version': 'v1',
+        'links': all_links
+    })
+
+
 def main():
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
 
 
 if __name__ == '__main__':
