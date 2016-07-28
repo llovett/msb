@@ -42,10 +42,11 @@ class Comment(MongoModel, JSONAble):
 
 
 class Post(MongoModel, JSONAble):
-    export_fields = ('date', 'title', 'body', 'author_handle')
+    export_fields = ('date', 'title', 'body', 'summary', 'author_handle')
 
     title = fields.CharField()
     body = fields.CharField()
+    summary = fields.CharField()
     date = fields.DateTimeField()
     author = fields.ReferenceField(User)
 
