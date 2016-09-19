@@ -3,8 +3,9 @@
 import functools
 import os
 
-from flask import Flask, jsonify, request, session
-from pymongo_odm.errors import ValidationError
+from bson.objectid import ObjectId
+from flask import Flask, jsonify, request, session, make_response
+from pymodm.errors import ValidationError
 
 from common import pluralize
 from models import User, Post, Comment
@@ -25,6 +26,20 @@ def login_required(func):
             return jsonify({'errors': ['Must be logged in.']}), 401
         return func(*args, **kwargs)
     return wrapper
+
+
+def add_response_headers(headers={}):
+    """This decorator adds the headers passed in to the response"""
+    def decorator(f):
+        @functools.wraps(f)
+        def decorated_function(*args, **kwargs):
+            resp = make_response(f(*args, **kwargs))
+            h = resp.headers
+            for header, value in headers.items():
+                h[header] = value
+            return resp
+        return decorated_function
+    return decorator
 
 
 def links_for_model(model):
@@ -87,6 +102,7 @@ def links_for_model(model):
 
 
 def create(model):
+    @add_response_headers({'Access-Control-Allow-Origin': '*'})
     @login_required
     def create_instance():
         try:
@@ -101,6 +117,7 @@ def create(model):
 
 
 def update(model):
+    @add_response_headers({'Access-Control-Allow-Origin': '*'})
     @login_required
     def update_instance(instance_id):
         try:
@@ -113,9 +130,11 @@ def update(model):
 
 
 def read(model):
+    @add_response_headers({'Access-Control-Allow-Origin': '*'})
     def read_instance(instance_id):
         try:
-            return model.objects.get(pk=instance_id).as_json()
+            return jsonify(
+                model.objects.get({'_id': ObjectId(instance_id)}).as_json())
         except model.DoesNotExist:
             return jsonify({'errors': ['No {} object with id {}'.format(
                 model.__name__.lower(), instance_id)]}), 404
@@ -123,6 +142,7 @@ def read(model):
 
 
 def read_many(model):
+    @add_response_headers({'Access-Control-Allow-Origin': '*'})
     def read_all():
         all_objects = [inst.as_json() for inst in model.objects.all()]
         return jsonify({pluralize(model.__name__.lower()): all_objects})
@@ -130,11 +150,17 @@ def read_many(model):
 
 
 def destroy(model):
+    @add_response_headers({'Access-Control-Allow-Origin': '*'})
     @login_required
     def destroy_instance(instance_id):
         deleted = model.objects.raw({'_id': instance_id}).delete()
         return jsonify({'deleted': deleted}), 200 if deleted else 404
     return destroy_instance
+
+
+@add_response_headers({'Access-Control-Allow-Origin': '*'})
+def stupid():
+    return ''
 
 
 # Model-related routes.
@@ -160,10 +186,14 @@ for model in (User, Post):
                      endpoint='create-{}'.format(model_name),
                      view_func=create(model),
                      methods=['POST'])
+    app.add_url_rule('/v1/' + model_name, endpoint='stupid-' + model_name,
+                     view_func=stupid,
+                     methods=['HEAD', 'OPTIONS'])
 
 
 # Other routes.
 @app.route('/v1/users/login', methods=['POST'])
+@add_response_headers({'Access-Control-Allow-Origin': '*'})
 def login_api():
     user_data = request.get_json(force=True)
     logged_in = User.valid_user(user_data['email'], user_data['password'])
@@ -175,6 +205,7 @@ def login_api():
 
 
 @app.route('/v1')
+@add_response_headers({'Access-Control-Allow-Origin': '*'})
 def index_api():
     all_links = (
         links_for_model(Post) +

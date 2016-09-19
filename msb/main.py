@@ -6,7 +6,7 @@ import sys
 from flask import (
     Flask, render_template, session, request, jsonify,
     redirect, url_for)
-from pymongo_odm.errors import ValidationError
+from pymodm.errors import ValidationError
 
 from common import salted_hash
 from models import User, Post

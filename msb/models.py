@@ -1,4 +1,4 @@
-from pymongo_odm import MongoModel, fields, connect
+from pymodm import MongoModel, fields, connect
 
 from common import salted_hash
 
@@ -20,8 +20,9 @@ class User(MongoModel, JSONAble):
     export_fields = ('email', 'handle')
 
     email = fields.EmailField(primary_key=True)
-    handle = fields.CharField()  # TODO: some way of specifying 'unique'?
-    password = fields.CharField()
+    # TODO: some way of specifying 'unique'?
+    handle = fields.CharField(required=True)
+    password = fields.CharField(required=True)
 
     @classmethod
     def valid_user(cls, email, password):
@@ -36,20 +37,27 @@ class User(MongoModel, JSONAble):
 class Comment(MongoModel, JSONAble):
     export_fields = ('date', 'body', 'author')
 
-    author = fields.EmailField()
-    date = fields.DateTimeField()
-    body = fields.CharField()
+    author = fields.EmailField(required=True)
+    date = fields.DateTimeField(required=True)
+    body = fields.CharField(required=True)
 
 
 class Post(MongoModel, JSONAble):
-    export_fields = ('date', 'title', 'body', 'summary', 'author_handle')
+    export_fields = (
+        'id', 'date', 'title', 'body', 'summary', 'active', 'author_handle')
 
-    title = fields.CharField()
-    body = fields.CharField()
-    summary = fields.CharField()
-    date = fields.DateTimeField()
-    author = fields.ReferenceField(User)
+    title = fields.CharField(required=True)
+    body = fields.CharField(required=True)
+    summary = fields.CharField(required=True)
+    date = fields.DateTimeField(required=True)
+    author = fields.ReferenceField(User, required=True)
+    # Is this Post published?
+    active = fields.BooleanField(default=False)
 
     @property
     def author_handle(self):
         return self.author.handle
+
+    @property
+    def id(self):
+        return str(self.pk)
